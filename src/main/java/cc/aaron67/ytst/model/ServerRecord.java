@@ -1,7 +1,7 @@
 package cc.aaron67.ytst.model;
 
 public class ServerRecord {
-	private String region; // 国家、地区
+	private String region; // 国家和地区
 	private String name; // 名称
 	private String domain; // 域名
 	private String status; // 实时状态
