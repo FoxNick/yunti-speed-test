@@ -107,6 +107,23 @@ public class HttpUtils {
 		return html;
 	}
 
+	/**
+	 * 抓取页面的源码
+	 */
+	public static String fetchPage(String url, Map<String, String> headers) {
+		CloseableHttpResponse response = HttpUtils.get(url, headers);
+		try {
+			return fetchWebpage(response);
+		} finally {
+			try {
+				response.close();
+			} catch (IOException e) {
+				logger.error(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private static void addHeaders(HttpUriRequest request, Map<String, String> headers) {
 		if (headers == null) {
 			return;
