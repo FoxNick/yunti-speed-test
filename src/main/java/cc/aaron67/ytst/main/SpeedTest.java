@@ -40,32 +40,31 @@ public class SpeedTest {
 	}
 
 	public void testServerSpeed() {
-		
-		for(ServerRecord sr : serverList) {
-			try {
-				//获取操作系统类型
+		try {
+			for (ServerRecord sr : serverList) {
+				// 获取操作系统类型
 				String osType = System.getProperty("os.name").toLowerCase();
-				
-				//根据操作系统类型抓取ping信息
-				if(osType.contains("windows")) {
-					showPingMsgFromWindwos(Runtime.getRuntime().exec("ping -n 10 " + sr.getDomain()), sr.getDomain());
-				} else if(osType.contains("mac")) {
-					showPingMsgFromMac(Runtime.getRuntime().exec("ping -n 10 " + sr.getDomain()));
+				// 根据操作系统类型抓取ping信息
+				if (osType.contains("windows")) {
+					showPingMsgFromWindwos(
+							Runtime.getRuntime().exec("ping -n " + Config.get("pingcnt") + " " + sr.getDomain()),
+							sr.getDomain());
+				} else if (osType.contains("mac")) {
+					showPingMsgFromMac(
+							Runtime.getRuntime().exec("ping -c " + Config.get("pingcnt") + " " + sr.getDomain()));
 				} else {
-					System.out.println("Sorry,we can't support the " + osType + " Operating System now.");
+					logger.info("不支持的操作系统");
 				}
-
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
+		} catch (IOException e) {
+			logger.error(e.getMessage());
+			e.printStackTrace();
 		}
 	}
-	
+
 	private void showPingMsgFromWindwos(Process p, String domainName) {
 		try {
-			
 			System.out.println("-- " + domainName + " ping statistics --");
-			
 			InputStreamReader isr = new InputStreamReader(p.getInputStream(), "GBK");
 			BufferedReader br = new BufferedReader(isr);
 			int count = 1;
@@ -74,28 +73,26 @@ public class SpeedTest {
 				if (strRead == null) {
 					break;
 				} else {
-					//WINDOWS下，ping命令在控制台需要经过14行才能获得统计信息
-					if (count <= 14) {
+					// Windows下，ping命令在控制台需要经过(pingcnt+4)行才能获得统计信息
+					if (count <= Integer.parseInt(Config.get("pingcnt")) + 4) {
 						count++;
 					} else {
 						System.out.println(strRead);
 					}
 				}
-
 			}
 			System.out.println();
-
 		} catch (IOException e) {
+			logger.error(e.getMessage());
 			e.printStackTrace();
 		} finally {
 			p.destroy();
 		}
-		
 	}
-	
+
 	private void showPingMsgFromMac(Process p) {
 		try {
-			InputStreamReader isr = new InputStreamReader(p.getInputStream(), "utf8");
+			InputStreamReader isr = new InputStreamReader(p.getInputStream(), "UTF-8");
 			BufferedReader br = new BufferedReader(isr);
 			int count = 1;
 			while (true) {
@@ -103,23 +100,21 @@ public class SpeedTest {
 				if (strRead == null) {
 					break;
 				} else {
-					//WINDOWS下，ping命令在控制台需要经过12行才能获得统计信息
-					if (count <= 12) {
+					// Mac下，ping命令在控制台需要经过(pingcnt+2)行才能获得统计信息
+					if (count <= Integer.parseInt(Config.get("pingcnt")) + 2) {
 						count++;
 					} else {
 						System.out.println(strRead);
 					}
 				}
-
 			}
 			System.out.println();
-			
 		} catch (IOException e) {
+			logger.error(e.getMessage());
 			e.printStackTrace();
 		} finally {
 			p.destroy();
 		}
-		
 	}
 
 	public boolean login() {

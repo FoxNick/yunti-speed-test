@@ -23,7 +23,7 @@ public class UnitTest {
 					+ sr.getProtocal() + " " + sr.getComment());
 		}
 	}
-	
+
 	@Test
 	public void testServerSpeedTest() {
 		SpeedTest st = new SpeedTest();
