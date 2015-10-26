@@ -30,7 +30,11 @@ public class SpeedTest {
 	private final static String SERVER_URL = Config.get("srvurl") + "/admin/servers";
 
 	public void run() {
-		//
+		fetchServerList();
+	}
+
+	public List<ServerRecord> getServerList() {
+		return serverList;
 	}
 
 	public boolean login() {
@@ -73,33 +77,44 @@ public class SpeedTest {
 		return false;
 	}
 
-	public List<ServerRecord> getServerList() {
-		return serverList;
-	}
-
 	public void fetchServerList() {
-		// 登录云梯
-		if (login()) {
-
+		try {
+			// 登录云梯
+			if (login()) {
+				Map<String, String> headers = new HashMap<String, String>();
+				headers.put("Referer", ADMIN_URL);
+				headers.put("Cookie", "_dallas_session=" + dallasSession);
+				// 获取服务器列表
+				Elements serverTable = Jsoup.parse(HttpUtils.fetchPage(SERVER_URL, headers)).select("tr");
+				String region = "", name = "";
+				for (Element e : serverTable) {
+					Elements tds = e.select("td");
+					if (tds.size() == 0) {
+						continue;
+					}
+					ServerRecord sr = new ServerRecord();
+					int i = 0;
+					if (tds.size() == 6) {
+						region = tds.get(i++).text();
+						name = tds.get(i++).text();
+					} else if (tds.size() == 5) {
+						name = tds.get(i++).text();
+					}
+					sr.setRegion(region);
+					sr.setName(name);
+					sr.setDomain(tds.get(i++).text());
+					sr.setStatus(tds.get(i++).text());
+					sr.setProtocal(tds.get(i++).text());
+					sr.setComment(tds.get(i++).text());
+					serverList.add(sr);
+				}
+				logger.info("抓取服务器列表成功");
+			}
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			e.printStackTrace();
+			logger.info("抓取服务器列表失败");
 		}
-
-		// 临时拼装数据
-		ServerRecord sr0 = new ServerRecord();
-		sr0.setRegion("香港");
-		sr0.setName("香港2号");
-		sr0.setDomain("p1.hk2.vpntower.com");
-		sr0.setStatus("正常");
-		sr0.setProtocal("PPTP");
-		sr0.setComment("电信良好。联通优秀。");
-		serverList.add(sr0);
-		ServerRecord sr1 = new ServerRecord();
-		sr1.setRegion("日本");
-		sr1.setName("日本2号");
-		sr1.setDomain("p2.jp2.vpntower.com");
-		sr1.setStatus("正常");
-		sr1.setProtocal("L2TP");
-		sr1.setComment("电信一般。联通良好。");
-		serverList.add(sr1);
 	}
 
 	public void testServerSpeed() {
