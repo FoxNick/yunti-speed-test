@@ -8,6 +8,12 @@ import cc.aaron67.ytst.model.ServerRecord;
 public class UnitTest {
 
 	@Test
+	public void loginTest() {
+		SpeedTest st = new SpeedTest();
+		System.out.println(st.login());
+	}
+
+	@Test
 	public void fetchTest() {
 		SpeedTest st = new SpeedTest();
 		st.fetchServerList();
