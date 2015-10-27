@@ -41,8 +41,8 @@ ping_count=4
 ```
 
 ## 使用说明
-0. 本地命令行有jdk/jre环境
-1. 命令行下cd到`release`文件夹
+0. 本地命令行有 jdk 或 jre 环境
+1. 命令行下 cd 到`release`文件夹
 2. 修改`init.properties` 中的配置
 3. 命令行中运行 `java -jar yunti-speed-test.jar` 测速
 4. 输出形如
