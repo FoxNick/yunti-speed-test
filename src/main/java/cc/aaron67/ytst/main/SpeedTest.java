@@ -2,6 +2,8 @@ package cc.aaron67.ytst.main;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,6 +180,8 @@ public class SpeedTest {
 	}
 
 	private void displayPingTestResult() {
+		PingTestResultComparator ptrc = new PingTestResultComparator();
+		Collections.sort(pingTestResult, ptrc);
 		for (PingTestResult ptr : pingTestResult) {
 			System.out.printf("%10s%10s%10s%10s%10s%10s%10s\n", ptr.getServerRecord().getName(),
 					ptr.getServerRecord().getProtocal(), ptr.getPingStatistics().getPacketsTransmitted(),
@@ -185,6 +189,27 @@ public class SpeedTest {
 					ptr.getPingStatistics().getRoundTripMax(), ptr.getPingStatistics().getRoundTripAvg());
 		}
 		System.out.println("-------------------------------------------------------------------------");
+	}
+
+}
+
+class PingTestResultComparator implements Comparator<PingTestResult> {
+
+	@Override
+	public int compare(PingTestResult o1, PingTestResult o2) {
+		if (o1.getPingStatistics().getPacketsLossRate() < o2.getPingStatistics().getPacketsLossRate()) {
+			return -1;
+		} else if (o1.getPingStatistics().getPacketsLossRate() == o2.getPingStatistics().getPacketsLossRate()) {
+			if (o1.getPingStatistics().getRoundTripAvg() < o2.getPingStatistics().getRoundTripAvg()) {
+				return -1;
+			} else if (o1.getPingStatistics().getRoundTripAvg() == o2.getPingStatistics().getRoundTripAvg()) {
+				return 0;
+			} else {
+				return 1;
+			}
+		} else {
+			return 1;
+		}
 	}
 
 }
