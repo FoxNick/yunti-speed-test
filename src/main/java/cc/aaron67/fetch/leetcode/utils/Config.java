@@ -9,13 +9,14 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 public class Config {
-	private static Logger logger = Logger.getLogger(Config.class);
 
 	private static Properties properties = new Properties();
 
+	private final static Logger logger = Logger.getLogger(Config.class);
+
 	static {
 		try {
-			logger.info("读取配置文件");
+			System.out.println("读取配置文件");
 			String configFilePath = System.getProperty("user.dir") + "/init.properties";
 			PropertyConfigurator.configure(configFilePath);
 			properties.load(new BufferedInputStream(new FileInputStream(configFilePath)));
