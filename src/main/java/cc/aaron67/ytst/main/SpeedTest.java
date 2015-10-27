@@ -167,9 +167,9 @@ public class SpeedTest {
 	}
 
 	private void displayTestResult() {
-		System.out.println("--------------------------------------------------------------------");
-		System.out.printf("%s\t%10s%10s%10s%10s%10s%10s\n", "Server", "Protocol", "PKG", "Miss%", "MIN", "MAX", "AVG");
-		System.out.println("--------------------------------------------------------------------");
+		System.out.println("-------------------------------------------------------------------------");
+		System.out.printf("%10s%10s%10s%10s%10s%10s%10s\n", "Server", "Protocol", "PKG", "Miss%", "MIN", "MAX", "AVG");
+		System.out.println("-------------------------------------------------------------------------");
 		switch (Config.get("method")) {
 		case "ping":
 			displayPingTestResult();
@@ -179,12 +179,12 @@ public class SpeedTest {
 
 	private void displayPingTestResult() {
 		for (PingTestResult ptr : pingTestResult) {
-			System.out.printf("%s\t%10s%10s%10s%10s%10s%10s\n", ptr.getServerRecord().getName(),
+			System.out.printf("%10s%10s%10s%10s%10s%10s%10s\n", ptr.getServerRecord().getName(),
 					ptr.getServerRecord().getProtocal(), ptr.getPingStatistics().getPacketsTransmitted(),
 					ptr.getPingStatistics().getPacketsLossRate(), ptr.getPingStatistics().getRoundTripMin(),
 					ptr.getPingStatistics().getRoundTripMax(), ptr.getPingStatistics().getRoundTripAvg());
 		}
-		System.out.println("--------------------------------------------------------------------");
+		System.out.println("-------------------------------------------------------------------------");
 	}
 
 }
