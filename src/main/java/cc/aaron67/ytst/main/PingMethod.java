@@ -27,8 +27,14 @@ public class PingMethod implements Runnable {
 				paramsBuilder.append(key).append(" ").append(params.get(key)).append(" ");
 			}
 			String command = "ping " + paramsBuilder.toString() + host;
-			BufferedReader buf = new BufferedReader(
-					new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream()));
+			InputStreamReader isr;
+			if (System.getProperty("os.name").toLowerCase().contains("windows")
+					&& System.getProperty("user.language").equals("zh")) {
+				isr = new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream(), "GBK");
+			} else {
+				isr = new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream(), "UTF-8");
+			}
+			BufferedReader buf = new BufferedReader(isr);
 			String readline;
 			while ((readline = buf.readLine()) != null) {
 				Pattern pp = Pattern.compile(patternPackage);
