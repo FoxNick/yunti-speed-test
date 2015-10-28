@@ -2,6 +2,7 @@ package cc.aaron67.ytst.main;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
@@ -9,12 +10,14 @@ import java.util.regex.Pattern;
 
 import cc.aaron67.ytst.model.PingStatistics;
 
-public class MacPingMethod implements Runnable {
+public class PingMethod implements Runnable {
 
 	private PingStatistics pingStatistics;
 	private String host;
 	private Map<String, String> params;
 	private CountDownLatch signal;
+	private String patternPackage;
+	private String patternRoundTrip;
 
 	@Override
 	public void run() {
@@ -24,27 +27,34 @@ public class MacPingMethod implements Runnable {
 				paramsBuilder.append(key).append(" ").append(params.get(key)).append(" ");
 			}
 			String command = "ping " + paramsBuilder.toString() + host;
-			BufferedReader buf = new BufferedReader(
-					new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream()));
+			InputStreamReader isr;
+			if (System.getProperty("os.name").toLowerCase().contains("windows")
+					&& System.getProperty("user.language").equals("zh")) {
+				isr = new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream(), "GBK");
+			} else {
+				isr = new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream(), "UTF-8");
+			}
+			BufferedReader buf = new BufferedReader(isr);
 			String readline;
 			while ((readline = buf.readLine()) != null) {
-				// 4 packets transmitted, 3 packets received, 25.0% packet loss
-				Pattern pp = Pattern.compile(
-						"(\\d+) packets transmitted, (\\d+) packets received, (\\d+\\.\\d+|\\d+)% packet loss");
+				Pattern pp = Pattern.compile(patternPackage);
 				Matcher mp = pp.matcher(readline);
 				if (mp.find()) {
 					pingStatistics.setPacketsTransmitted(Integer.parseInt(mp.group(1)));
 					pingStatistics.setPacketsReceived(Integer.parseInt(mp.group(2)));
 					pingStatistics.setPacketsLossRate(Double.parseDouble(mp.group(3)));
 				}
-				// round-trip min/avg/max/... = 101.843/124.146/156.229/... ms
-				Pattern prt = Pattern.compile(
-						"round-trip[\\s\\S]*=[\\s]*(\\d+\\.\\d+|\\d+)/(\\d+\\.\\d+|\\d+)/(\\d+\\.\\d+|\\d+)/([\\s\\S]*)ms");
+				Pattern prt = Pattern.compile(patternRoundTrip);
 				Matcher mrt = prt.matcher(readline);
 				if (mrt.find()) {
-					pingStatistics.setRoundTripMin(Double.parseDouble(mrt.group(1)));
-					pingStatistics.setRoundTripAvg(Double.parseDouble(mrt.group(2)));
-					pingStatistics.setRoundTripMax(Double.parseDouble(mrt.group(3)));
+					double rtt0 = Double.parseDouble(mrt.group(1));
+					double rtt1 = Double.parseDouble(mrt.group(2));
+					double rtt2 = Double.parseDouble(mrt.group(3));
+					pingStatistics.setRoundTripMin(Math.min(rtt0, Math.min(rtt1, rtt2)));
+					pingStatistics.setRoundTripMax(Math.max(rtt0, Math.max(rtt1, rtt2)));
+					DecimalFormat df = new DecimalFormat("#.###");
+					pingStatistics.setRoundTripAvg(Double.parseDouble(df.format(
+							rtt0 + rtt1 + rtt2 - pingStatistics.getRoundTripMin() - pingStatistics.getRoundTripMax())));
 				}
 			}
 		} catch (Exception e) {
@@ -83,6 +93,22 @@ public class MacPingMethod implements Runnable {
 
 	public void setSignal(CountDownLatch signal) {
 		this.signal = signal;
+	}
+
+	public String getPatternPackage() {
+		return patternPackage;
+	}
+
+	public void setPatternPackage(String patternPackage) {
+		this.patternPackage = patternPackage;
+	}
+
+	public String getPatternRoundTrip() {
+		return patternRoundTrip;
+	}
+
+	public void setPatternRoundTrip(String patternRoundTrip) {
+		this.patternRoundTrip = patternRoundTrip;
 	}
 
 }

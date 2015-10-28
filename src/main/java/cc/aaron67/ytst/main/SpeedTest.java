@@ -2,11 +2,14 @@ package cc.aaron67.ytst.main;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.http.Header;
@@ -16,26 +19,34 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
-import cc.aaron67.fetch.leetcode.utils.Config;
-import cc.aaron67.fetch.leetcode.utils.HttpUtils;
 import cc.aaron67.ytst.model.PingStatistics;
 import cc.aaron67.ytst.model.PingTestResult;
 import cc.aaron67.ytst.model.ServerRecord;
+import cc.aaron67.ytst.utils.Config;
+import cc.aaron67.ytst.utils.HttpUtils;
 
 public class SpeedTest {
 
-	private final static String LOGIN_URL = Config.get("srvurl") + "/users/sign_in";
-	private final static String ADMIN_URL = Config.get("srvurl") + "/admin";
-	private final static String SERVER_URL = Config.get("srvurl") + "/admin/servers";
+	private final static String LOGIN_URL = Config.get("server_url") + "/users/sign_in";
+	private final static String ADMIN_URL = Config.get("server_url") + "/admin";
+	private final static String SERVER_URL = Config.get("server_url") + "/admin/servers";
 
 	private String dallasSession = "";
 	private List<ServerRecord> serverList = new ArrayList<ServerRecord>();
+	private Set<String> filterWords = null;
+
 	private List<PingTestResult> pingTestResult = new ArrayList<PingTestResult>();
+	private Map<String, String> pingParameters = new HashMap<String, String>();
 
 	public void runTest() {
+		prepareFilterWords();
 		fetchServerList();
 		testServerSpeed();
 		displayTestResult();
+	}
+
+	private void prepareFilterWords() {
+		filterWords = new HashSet<String>(Arrays.asList(Config.get("filter_words").split(",")));
 	}
 
 	private void fetchServerList() {
@@ -47,11 +58,13 @@ public class SpeedTest {
 				// 获取服务器列表
 				Elements serverTable = Jsoup.parse(HttpUtils.fetchPage(SERVER_URL, headers)).select("tr");
 				String region = "", name = "";
+				int serverTotalCount = 0;
 				for (Element e : serverTable) {
 					Elements tds = e.select("td");
 					if (tds.size() == 0) {
 						continue;
 					}
+					++serverTotalCount;
 					ServerRecord sr = new ServerRecord();
 					int i = 0;
 					if (tds.size() == 6) {
@@ -64,11 +77,15 @@ public class SpeedTest {
 					sr.setName(name);
 					sr.setDomain(tds.get(i++).text());
 					sr.setStatus(tds.get(i++).text());
+					if (!sr.getStatus().equals("正常")) {
+						continue;
+					}
 					sr.setProtocal(tds.get(i++).text());
 					sr.setComment(tds.get(i++).text());
 					serverList.add(sr);
 				}
 				System.out.println("抓取服务器列表成功");
+				System.out.println("服务器线路共" + serverTotalCount + "条，状态为正常的线路有" + serverList.size() + "条");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -117,10 +134,22 @@ public class SpeedTest {
 	private void testServerSpeed() {
 		switch (Config.get("method")) {
 		case "ping":
+			preparePingParameters();
 			pingTestServerSpeed();
 			break;
 		default:
 			System.out.println("不支持的测速方法");
+		}
+	}
+
+	private void preparePingParameters() {
+		String osType = System.getProperty("os.name").toLowerCase();
+		if (osType.contains("windows")) {
+			pingParameters.put("-n", Config.get("ping_count"));
+		} else if (osType.contains("mac") || osType.contains("linux")) {
+			pingParameters.put("-c", Config.get("ping_count"));
+		} else {
+			System.out.println("不支持的操作系统");
 		}
 	}
 
@@ -133,45 +162,27 @@ public class SpeedTest {
 				ptr.setPingStatistics(new PingStatistics());
 				pingTestResult.add(ptr);
 			}
-			String osType = System.getProperty("os.name").toLowerCase();
-			if (osType.contains("windows")) {
-				//
-			} else if (osType.contains("mac")) {
-				macPingTest();
-			} else {
-				System.out.println("不支持的操作系统");
+			System.out.println("启动" + pingTestResult.size() + "个线程测速");
+			CountDownLatch signal = new CountDownLatch(pingTestResult.size());
+			for (int i = 0; i < pingTestResult.size(); ++i) {
+				PingMethod mpm = new PingMethod();
+				mpm.setHost(pingTestResult.get(i).getServerRecord().getDomain());
+				mpm.setPingStatistics(pingTestResult.get(i).getPingStatistics());
+				mpm.setParams(pingParameters);
+				mpm.setSignal(signal);
+				mpm.setPatternPackage(Config.get("pattern_package"));
+				mpm.setPatternRoundTrip(Config.get("pattern_roundtrip"));
+				Thread t = new Thread(mpm);
+				t.start();
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void macPingTest() {
-		System.out.println("启动" + pingTestResult.size() + "个线程测速");
-		CountDownLatch signal = new CountDownLatch(pingTestResult.size());
-		Map<String, String> params = new HashMap<String, String>();
-		params.put("-c", Config.get("ping_count"));
-		for (int i = 0; i < pingTestResult.size(); ++i) {
-			MacPingMethod mpm = new MacPingMethod();
-			mpm.setHost(pingTestResult.get(i).getServerRecord().getDomain());
-			mpm.setPingStatistics(pingTestResult.get(i).getPingStatistics());
-			mpm.setParams(params);
-			mpm.setSignal(signal);
-			Thread t = new Thread(mpm);
-			t.start();
-		}
-		try {
 			signal.await();
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		System.out.println("测速结束");
 	}
 
 	private void displayTestResult() {
-		System.out.println("-------------------------------------------------------------------------");
-		System.out.printf("%10s%10s%10s%10s%10s%10s%10s\n", "Server", "Protocol", "PKG", "Miss%", "MIN", "MAX", "AVG");
-		System.out.println("-------------------------------------------------------------------------");
 		switch (Config.get("method")) {
 		case "ping":
 			displayPingTestResult();
@@ -182,6 +193,9 @@ public class SpeedTest {
 	private void displayPingTestResult() {
 		PingTestResultComparator ptrc = new PingTestResultComparator();
 		Collections.sort(pingTestResult, ptrc);
+		System.out.println("-------------------------------------------------------------------------");
+		System.out.printf("%10s%10s%10s%10s%10s%10s%10s\n", "Server", "Protocol", "PKG", "Miss%", "MIN", "MAX", "AVG");
+		System.out.println("-------------------------------------------------------------------------");
 		for (PingTestResult ptr : pingTestResult) {
 			System.out.printf("%10s%10s%10s%10s%10s%10s%10s\n", ptr.getServerRecord().getName(),
 					ptr.getServerRecord().getProtocal(), ptr.getPingStatistics().getPacketsTransmitted(),
@@ -189,6 +203,23 @@ public class SpeedTest {
 					ptr.getPingStatistics().getRoundTripMax(), ptr.getPingStatistics().getRoundTripAvg());
 		}
 		System.out.println("-------------------------------------------------------------------------");
+		int count = Integer.parseInt(Config.get("filter_record"));
+		boolean commentMatch = false;
+		for (int i = 0; i < count && i < pingTestResult.size(); ++i) {
+			int index = pingTestResult.size() - i - 1;
+			for (String value : filterWords) {	
+				if (pingTestResult.get(index).getServerRecord().getComment().contains(value)) {
+					System.out.printf("%10s%10s\t%s\n", pingTestResult.get(index).getServerRecord().getName(),
+							pingTestResult.get(index).getServerRecord().getProtocal(),
+							pingTestResult.get(index).getServerRecord().getComment());
+					commentMatch = true;
+					break;
+				}
+			}
+		}
+		if (commentMatch) {
+			System.out.println("-------------------------------------------------------------------------");
+		}
 	}
 
 }
@@ -198,17 +229,17 @@ class PingTestResultComparator implements Comparator<PingTestResult> {
 	@Override
 	public int compare(PingTestResult o1, PingTestResult o2) {
 		if (o1.getPingStatistics().getPacketsLossRate() < o2.getPingStatistics().getPacketsLossRate()) {
-			return -1;
+			return 1;
 		} else if (o1.getPingStatistics().getPacketsLossRate() == o2.getPingStatistics().getPacketsLossRate()) {
 			if (o1.getPingStatistics().getRoundTripAvg() < o2.getPingStatistics().getRoundTripAvg()) {
-				return -1;
+				return 1;
 			} else if (o1.getPingStatistics().getRoundTripAvg() == o2.getPingStatistics().getRoundTripAvg()) {
 				return 0;
 			} else {
-				return 1;
+				return -1;
 			}
 		} else {
-			return 1;
+			return -1;
 		}
 	}
 
