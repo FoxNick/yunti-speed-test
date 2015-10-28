@@ -1,4 +1,4 @@
-package cc.aaron67.fetch.leetcode.utils;
+package cc.aaron67.ytst.utils;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
