@@ -30,7 +30,7 @@ public class MacPingMethod implements Runnable {
 			while ((readline = buf.readLine()) != null) {
 				// 4 packets transmitted, 3 packets received, 25.0% packet loss
 				Pattern pp = Pattern.compile(
-						"(\\d+) packets transmitted, (\\d+) packets received, (\\d+\\.\\d+|\\d+)% packet loss");
+						"\\s*(\\d+)[\\s\\S]*transmitted,\\s*(\\d+)[\\s\\S]*received,\\s*(\\d+\\.\\d+|\\d+)%[\\s\\S]*");
 				Matcher mp = pp.matcher(readline);
 				if (mp.find()) {
 					pingStatistics.setPacketsTransmitted(Integer.parseInt(mp.group(1)));
@@ -39,7 +39,7 @@ public class MacPingMethod implements Runnable {
 				}
 				// round-trip min/avg/max/... = 101.843/124.146/156.229/... ms
 				Pattern prt = Pattern.compile(
-						"round-trip[\\s\\S]*=[\\s]*(\\d+\\.\\d+|\\d+)/(\\d+\\.\\d+|\\d+)/(\\d+\\.\\d+|\\d+)/([\\s\\S]*)ms");
+						"[\\s\\S]*round-trip[\\s\\S]*=[\\s]*(\\d+\\.\\d+|\\d+)/(\\d+\\.\\d+|\\d+)/(\\d+\\.\\d+|\\d+)/([\\s\\S]*)");
 				Matcher mrt = prt.matcher(readline);
 				if (mrt.find()) {
 					pingStatistics.setRoundTripMin(Double.parseDouble(mrt.group(1)));

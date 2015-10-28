@@ -199,17 +199,22 @@ public class SpeedTest {
 		}
 		System.out.println("-------------------------------------------------------------------------");
 		int count = Integer.parseInt(Config.get("filter_record"));
+		boolean commentMatch = false;
 		for (int i = 0; i < count && i < pingTestResult.size(); ++i) {
+			int index = pingTestResult.size() - i - 1;
 			for (String value : filterWords) {
-				if (pingTestResult.get(i).getServerRecord().getComment().contains(value)) {
-					System.out.printf("%10s%10s\t%s\n", pingTestResult.get(i).getServerRecord().getName(),
-							pingTestResult.get(i).getServerRecord().getProtocal(),
-							pingTestResult.get(i).getServerRecord().getComment());
+				if (pingTestResult.get(index).getServerRecord().getComment().contains(value)) {
+					System.out.printf("%10s%10s\t%s\n", pingTestResult.get(index).getServerRecord().getName(),
+							pingTestResult.get(index).getServerRecord().getProtocal(),
+							pingTestResult.get(index).getServerRecord().getComment());
+					commentMatch = true;
 					break;
 				}
 			}
 		}
-		System.out.println("-------------------------------------------------------------------------");
+		if (commentMatch) {
+			System.out.println("-------------------------------------------------------------------------");
+		}
 	}
 
 }
@@ -219,17 +224,17 @@ class PingTestResultComparator implements Comparator<PingTestResult> {
 	@Override
 	public int compare(PingTestResult o1, PingTestResult o2) {
 		if (o1.getPingStatistics().getPacketsLossRate() < o2.getPingStatistics().getPacketsLossRate()) {
-			return -1;
+			return 1;
 		} else if (o1.getPingStatistics().getPacketsLossRate() == o2.getPingStatistics().getPacketsLossRate()) {
 			if (o1.getPingStatistics().getRoundTripAvg() < o2.getPingStatistics().getRoundTripAvg()) {
-				return -1;
+				return 1;
 			} else if (o1.getPingStatistics().getRoundTripAvg() == o2.getPingStatistics().getRoundTripAvg()) {
 				return 0;
 			} else {
-				return 1;
+				return -1;
 			}
 		} else {
-			return 1;
+			return -1;
 		}
 	}
 
