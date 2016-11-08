@@ -61,7 +61,7 @@ public class SpeedTest {
 				int serverTotalCount = 0;
 				for (Element e : serverTable) {
 					Elements tds = e.select("td");
-					if (tds.size() == 0) {
+					if (tds.size() == 0 || tds.size() < 4) {
 						continue;
 					}
 					++serverTotalCount;
@@ -207,7 +207,7 @@ public class SpeedTest {
 		boolean commentMatch = false;
 		for (int i = 0; i < count && i < pingTestResult.size(); ++i) {
 			int index = pingTestResult.size() - i - 1;
-			for (String value : filterWords) {	
+			for (String value : filterWords) {
 				if (pingTestResult.get(index).getServerRecord().getComment().contains(value)) {
 					System.out.printf("%10s%10s\t%s\n", pingTestResult.get(index).getServerRecord().getName(),
 							pingTestResult.get(index).getServerRecord().getProtocal(),
