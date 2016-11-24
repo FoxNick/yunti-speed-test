@@ -22,7 +22,7 @@ pack.dependsOn 'build', 'copyConfig'
 ## init.properties配置文件说明
 ```
 # 云梯服务器地址，注意地址最后没有/
-server_url=https://www.ttincloud.com
+server_url=https://www.yuntipub.com
 
 # 登录云梯的账号密码，访问服务器列表需要先登录
 username=test
