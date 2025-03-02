@@ -1,5 +1,6 @@
 package cc.aaron67.ytst.main;
 
+import io.github.pixee.security.SystemCommand;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
@@ -30,9 +31,9 @@ public class PingMethod implements Runnable {
 			InputStreamReader isr;
 			if (System.getProperty("os.name").toLowerCase().contains("windows")
 					&& System.getProperty("user.language").equals("zh")) {
-				isr = new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream(), "GBK");
+				isr = new InputStreamReader(SystemCommand.runCommand(Runtime.getRuntime(), command).getInputStream(), "GBK");
 			} else {
-				isr = new InputStreamReader(Runtime.getRuntime().exec(command).getInputStream(), "UTF-8");
+				isr = new InputStreamReader(SystemCommand.runCommand(Runtime.getRuntime(), command).getInputStream(), "UTF-8");
 			}
 			BufferedReader buf = new BufferedReader(isr);
 			String readline;
