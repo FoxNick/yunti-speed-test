@@ -1,5 +1,6 @@
 package cc.aaron67.ytst.main;
 
+import io.github.pixee.security.BoundedLineReader;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.text.DecimalFormat;
@@ -36,7 +37,7 @@ public class PingMethod implements Runnable {
 			}
 			BufferedReader buf = new BufferedReader(isr);
 			String readline;
-			while ((readline = buf.readLine()) != null) {
+			while ((readline = BoundedLineReader.readLine(buf, 5_000_000)) != null) {
 				Pattern pp = Pattern.compile(patternPackage);
 				Matcher mp = pp.matcher(readline);
 				if (mp.find()) {
